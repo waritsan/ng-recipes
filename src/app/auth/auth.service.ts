@@ -5,6 +5,7 @@ import { throwError, Subject } from 'rxjs';
 
 import { User } from './user.model';
 import { environment } from 'src/environments/environment';
+import { Router } from '@angular/router';
 
 export interface AuthResponseData {
   kind: string;
@@ -19,7 +20,10 @@ export interface AuthResponseData {
 export class AuthService {
   user = new Subject<User>();
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private router: Router
+  ) { }
 
   signup(email: string, password: string) {
     return this.http
@@ -32,16 +36,14 @@ export class AuthService {
         }
       )
       .pipe(
-        catchError(errorRes => {
-          let errorMessage = 'An unknown error occured!';
-          if (!errorRes.error || !errorRes.error.error) {
-            return throwError(errorMessage);
-          }
-          switch (errorRes.error.error.message) {
-            case 'EMAIL_EXISTS':
-              errorMessage = 'This email exists already';
-          }
-          return throwError(errorMessage);
+        catchError(this.handleError),
+        tap(resData => {
+          this.handleAuthentication(
+            resData.email,
+            resData.localId,
+            resData.idToken,
+            +resData.expiresIn
+          );
         })
       );
   }
@@ -67,6 +69,11 @@ export class AuthService {
           );
         })
       );
+  }
+
+  logout() {
+    this.user.next(null);
+    this.router.navigate(['/auth']);
   }
 
   private handleAuthentication(
