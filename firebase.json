@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/ng-complete-guide-update",
+    "public": "dist/browser",
     "ignore": [
       "firebase.json",
       "**/.*",
